@@ -1,0 +1,27 @@
+{
+  "groups": [
+    {
+      "name": "febs.auth",
+      "type": "org.febs.auth.properties.FebsAuthProperties",
+      "sourceType": "org.febs.auth.properties.FebsAuthProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "febs.auth.access-token-validity-seconds",
+      "type": "java.lang.Integer",
+      "sourceType": "org.febs.auth.properties.FebsAuthProperties"
+    },
+    {
+      "name": "febs.auth.clients",
+      "type": "org.febs.auth.properties.FebsClientsProperties[]",
+      "sourceType": "org.febs.auth.properties.FebsAuthProperties"
+    },
+    {
+      "name": "febs.auth.refresh-token-validity-seconds",
+      "type": "java.lang.Integer",
+      "sourceType": "org.febs.auth.properties.FebsAuthProperties"
+    }
+  ],
+  "hints": []
+}
