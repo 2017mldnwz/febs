@@ -1,6 +1,11 @@
 package org.febs.auth.config;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.febs.auth.properties.FebsAuthProperties;
+import org.febs.auth.properties.FebsClientsProperties;
 import org.febs.auth.service.FebsUserDetailService;
+import org.febs.auth.translator.FebsWebResponseExceptionTranslator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,6 +13,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.config.annotation.builders.InMemoryClientDetailsServiceBuilder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
@@ -32,8 +38,12 @@ public class FebsAuthorizationServerConfigure extends AuthorizationServerConfigu
     @Autowired
     private FebsUserDetailService userDetailService;
     @Autowired
-    private PasswordEncoder passwordEncoder;   //在FebsSecurityConfigure中注入的
-    
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private FebsAuthProperties authProperties;  //配置文件
+    @Autowired
+    private FebsWebResponseExceptionTranslator exceptionTranslator;
+
     /**
      * 1、客户端从认证服务器获取令牌的时候，必须使用client_id为febs，client_secret为123456的标识来获取；
      * 2、该client_id支持password模式获取令牌，并且可以通过refresh_token来获取新的令牌；
@@ -41,11 +51,23 @@ public class FebsAuthorizationServerConfigure extends AuthorizationServerConfigu
      */
     @Override
     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-        clients.inMemory()
-                .withClient("febs")
-                .secret(passwordEncoder.encode("123456"))
-                .authorizedGrantTypes("password", "refresh_token")
-                .scopes("all");
+        FebsClientsProperties[] clientsArray = authProperties.getClients();
+        InMemoryClientDetailsServiceBuilder builder = clients.inMemory();
+        if (ArrayUtils.isNotEmpty(clientsArray)) {
+            for (FebsClientsProperties client : clientsArray) {
+                if (StringUtils.isBlank(client.getClient())) {
+                    throw new Exception("client不能为空");
+                }
+                if (StringUtils.isBlank(client.getSecret())) {
+                    throw new Exception("secret不能为空");
+                }
+                String[] grantTypes = StringUtils.splitByWholeSeparatorPreserveAllTokens(client.getGrantType(), ",");
+                builder.withClient(client.getClient())
+                        .secret(passwordEncoder.encode(client.getSecret()))
+                        .authorizedGrantTypes(grantTypes)
+                        .scopes(client.getScope());
+            }
+        }
     }
     
     @Override
@@ -53,7 +75,8 @@ public class FebsAuthorizationServerConfigure extends AuthorizationServerConfigu
         endpoints.tokenStore(tokenStore())    //认证服务器生成的令牌将被存储到Redis中
                 .userDetailsService(userDetailService)
                 .authenticationManager(authenticationManager)
-                .tokenServices(defaultTokenServices());
+                .tokenServices(defaultTokenServices())
+                .exceptionTranslator(exceptionTranslator);
     }
     
     @Bean
@@ -61,15 +84,15 @@ public class FebsAuthorizationServerConfigure extends AuthorizationServerConfigu
         return new RedisTokenStore(redisConnectionFactory);
     }
     
-    //指定了令牌的基本配置
-    @Primary
+    @Primary  //当有相同的注入bean是，此注释的注入bean优先级最高
     @Bean
+    //指定了令牌的基本配置
     public DefaultTokenServices defaultTokenServices() {
         DefaultTokenServices tokenServices = new DefaultTokenServices();
         tokenServices.setTokenStore(tokenStore());
-        tokenServices.setSupportRefreshToken(true);  //设置为true表示开启刷新令牌的支持
-        tokenServices.setAccessTokenValiditySeconds(60 * 60 * 24);  //令牌有效时间
-        tokenServices.setRefreshTokenValiditySeconds(60 * 60 * 24 * 7);  //刷新令牌有效时间
+        tokenServices.setSupportRefreshToken(true);
+        tokenServices.setAccessTokenValiditySeconds(authProperties.getAccessTokenValiditySeconds());
+        tokenServices.setRefreshTokenValiditySeconds(authProperties.getRefreshTokenValiditySeconds());
         return tokenServices;
     }
     

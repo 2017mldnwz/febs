@@ -1,9 +1,15 @@
 package org.febs.auth.config;
 
+import org.apache.commons.lang3.StringUtils;
+import org.febs.auth.properties.FebsAuthProperties;
+import org.febs.common.handler.FebsAccessDeniedHandler;
+import org.febs.common.handler.FebsAuthExceptionEntryPoint;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
 
 /**
  * 认证服务器本身也可以对外提供REST服务，比如通过Token获取当前登录用户信息，注销当前Token等，所以它也是一台资源服务器
@@ -17,12 +23,30 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.R
 @EnableResourceServer
 public class FebsResourceServerConfigure extends ResourceServerConfigurerAdapter{
 
+    @Autowired
+    private FebsAccessDeniedHandler accessDeniedHandler;
+    @Autowired
+    private FebsAuthExceptionEntryPoint exceptionEntryPoint;
+    @Autowired
+    private FebsAuthProperties properties;
+
 	@Override
     public void configure(HttpSecurity http) throws Exception {
+        String[] anonUrls = StringUtils.splitByWholeSeparatorPreserveAllTokens(properties.getAnonUrl(), ",");
+
         http.csrf().disable()
                 .requestMatchers().antMatchers("/**")
                 .and()
                 .authorizeRequests()
-                .antMatchers("/**").authenticated();
+                .antMatchers(anonUrls).permitAll()
+                .antMatchers("/**").authenticated()
+                .and().httpBasic();
+    }
+
+    @Override
+    public void configure(ResourceServerSecurityConfigurer resources) {
+	    //配置异常
+        resources.authenticationEntryPoint(exceptionEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler);
     }
 }

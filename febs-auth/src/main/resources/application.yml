@@ -8,13 +8,29 @@ spring:
     database: 0
     host: 127.0.0.1
     port: 6379
-    jedis:
+    lettuce:
       pool:
         min-idle: 8
         max-idle: 500
         max-active: 2000
         max-wait: 10000
-    timeout: 5000   
+    timeout: 5000
+  datasource:
+    dynamic:   #多数据源
+      hikari:
+        connection-timeout: 30000
+        max-lifetime: 1800000
+        max-pool-size: 15
+        min-idle: 5
+        connection-test-query: select 1
+        pool-name: FebsHikariCP
+      primary: base  #默认数据源名称
+      datasource:
+        base:  #数据源名称
+          username: root
+          password: 123456
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://localhost:3306/febs?useUnicode=true&characterEncoding=UTF-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=GMT%2b8
     
 eureka:
   instance:
@@ -27,3 +43,10 @@ eureka:
     serviceUrl:
       defaultZone: http://febs:123456@localhost:8001/register/eureka/ #指定Eureka服务端地址
    
+mybatis-plus:
+  type-aliases-package: org.febs.common.entity.system #指定别名扫描路径，该路径下的实体类将自动配置别名，默认为类名首字母小写。配置别名后，便可以直接在MyBatis XML文件里使用了
+  mapper-locations: classpath:mapper/*.xml  #指定MyBatis XML文件路径
+  configuration:
+    jdbc-type-for-null: null  #指定为null，否则再插入空值时会报“无效的列类型”错误
+  global-config:
+    banner: false  #设置为false关闭MyBatis Plus Banner打印
