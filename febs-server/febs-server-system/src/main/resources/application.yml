@@ -4,13 +4,29 @@ server:
 spring:
   application:
     name: FEBS-Server-System
-    
+  datasource:
+    dynamic:
+      p6spy: true  #在控制台中打印MyBatis执行的SQL
+      hikari:
+        connection-timeout: 30000
+        max-lifetime: 1800000
+        max-pool-size: 15
+        min-idle: 5
+        connection-test-query: select 1
+        pool-name: FebsHikariCP
+      primary: base
+      datasource:
+        base:
+          username: root
+          password: 123456
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://localhost:3306/febs_cloud_base?useUnicode=true&characterEncoding=UTF-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=GMT%2b8
 eureka:
   instance:
     lease-renewal-interval-in-seconds: 20 #向Eureka 服务端发送心跳的间隔时间，单位为秒，用于服务续约。这里配置为20秒，即每隔20秒向febs-register发送心跳，表明当前服务没有宕机
   client:
-    register-with-eureka: true ##为true时表示将当前服务注册到Eureak服务端
-    fetch-registry: true ##为true时表示从Eureka 服务端获取注册的服务信息
+    register-with-eureka: true  #为true时表示将当前服务注册到Eureak服务端
+    fetch-registry: true  #为true时表示从Eureka 服务端获取注册的服务信息
     instance-info-replication-interval-seconds: 30 #新实例信息的变化到Eureka服务端的间隔时间，单位为秒
     serviceUrl:
       defaultZone: http://febs:123456@localhost:8001/register/eureka/ #指定Eureka服务端地址
@@ -21,4 +37,10 @@ security:
       id: ${spring.application.name}
       user-info-uri: http://localhost:8301/auth/user  #通过微服务网关，该请求将被转发到http://localhost:8101/user。该配置的作用主要有两个：
                                                                                                                  # 1、到认证服务器里校验当前请求头中的令牌是否为合法的令牌；
-                                                                                                                 # 2、通过当前令牌获取对应的用户信息。
+mybatis-plus:
+  type-aliases-package: org.febs.common.entity.system  #指定别名扫描路径，该路径下的实体类将自动配置别名，默认为类名首字母小写。配置别名后，便可以直接在MyBatis XML文件里使用了
+  mapper-locations: classpath:mapper/*/*.xml
+  configuration:
+    jdbc-type-for-null: null
+  global-config:
+    banner: false                                                                                                                 # 2、通过当前令牌获取对应的用户信息（用于身份和权限的判断）。

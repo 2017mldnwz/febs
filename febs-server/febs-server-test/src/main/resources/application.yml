@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: FEBS-Server-Test
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration #因为我们在febs-common模块里引入了mybatis-plus-boot-starter，该starter包含数据库自动装配配置，
+                                                                                    #而febs-gateway、febs-server-system和febs-server-test模块并没有配置数据库，所以我们需要在它们的配置文件application.yml里添加如下配置来关闭数据库自动装配
 
 eureka:
   instance:
@@ -20,3 +23,8 @@ security:
     resource:
       id: ${spring.application.name}
       user-info-uri: http://localhost:8301/auth/user
+
+feign:
+  hystrix:
+    enabled: true
+  shareSecurityContext: true #这样做会把SecurityContext对象从你当前主线程传输到Hystrix线程。因为开启熔断后，默认是线程池隔离，所以熔断机制是在另一个线程上执行，不能接受到本地服务的头信息，也就不能将头信息向上游服务传递，又因为涉及到网络传输，不能讲隔离属性改成信号量隔离。
