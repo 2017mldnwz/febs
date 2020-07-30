@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.febs.server.system.mapper.UserMapper">
-    <select id="findUserDetailPage" parameterType="systemUser" resultType="org.febs.common.entity.system.SystemUser">
+    <select id="findUserDetailPage" parameterType="org.febs.common.entity.system.SystemUser" resultType="org.febs.common.entity.system.SystemUser">
         SELECT
         u.user_id userId,
         u.username,

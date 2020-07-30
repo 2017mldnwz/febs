@@ -43,6 +43,7 @@ public class FebsSecurityConfigure extends WebSecurityConfigurerAdapter {
                 .antMatchers("/oauth/**")  //FebsSecurityConfigure安全配置类只对/oauth/开头的请求有效
             .and()
                 .authorizeRequests()
+                .antMatchers("/actuator/**").permitAll()
                 .antMatchers("/oauth/**").authenticated()  ///oauth/开头的请求需要认证
             .and()
                 .csrf().disable();

@@ -22,6 +22,8 @@ import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.redis.RedisTokenStore;
 
+import java.util.UUID;
+
 /**
  * 认证服务器
  * @author 王哲
@@ -81,7 +83,10 @@ public class FebsAuthorizationServerConfigure extends AuthorizationServerConfigu
     
     @Bean
     public TokenStore tokenStore() {
-        return new RedisTokenStore(redisConnectionFactory);
+        RedisTokenStore redisTokenStore = new RedisTokenStore(redisConnectionFactory);
+        // 解决每次生成的 token都一样的问题
+        redisTokenStore.setAuthenticationKeyGenerator(oAuth2Authentication -> UUID.randomUUID().toString());
+        return redisTokenStore;
     }
     
     @Primary  //当有相同的注入bean是，此注释的注入bean优先级最高
